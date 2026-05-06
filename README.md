@@ -14,7 +14,7 @@ L'arquitectura es divideix en tres nodes principals connectats via **VPN Wiregua
 
 ### 🏗️ Node 1: Proxmox VE (Seu Local)
 És el nucli de serveis de la infraestructura. Gestiona la identitat i l'emmagatzematge.
-* **Active Directory (Windows Server):** Gestió centralitzada d'usuaris i polítiques.
+* **Samba  (Ubuntu server):** Gestió centralitzada d'usuaris i polítiques.
 * **Samba File Server:** Recursos compartits en xarxa.
 * **Samba Client:** Estació de treball per a proves de consum de recursos.
 * **Apache Web Server:** Servidor web intern per a aplicacions corporatives.
