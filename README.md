@@ -1,72 +1,85 @@
-# # 🛡️ LexDefensor: Arquitectura Híbrida de Ciberseguretat
+# 🛡️ LexDefensor: Arquitectura Híbrida de Ciberseguretat
 
 ![Status](https://img.shields.io/badge/Project-Hito%20Gamma-green?style=for-the-badge)
 ![Security](https://img.shields.io/badge/Security-Wazuh%20%2B%20CrowdSec-blue?style=for-the-badge)
 ![Virtualization](https://img.shields.io/badge/Virtualization-Proxmox-orange?style=for-the-badge)
 
-**LexDefensor** és una infraestructura de seguretat híbrida dissenyada per protegir actius digitals mitjançant la interconnexió segura de seus locals, entorns de proves i el núvol. El projecte se centra en la centralització de la identitat (Active Directory) i la vigilància activa (SOC).
+**LexDefensor** és una infraestructura de seguretat híbrida dissenyada per protegir actius digitals mitjançant la interconnexió segura de seus locals, entorns de proves i el núvol.
 
 ---
 
-## 🛰️ Topologia de l'Estructura (Nodes)
-
-L'arquitectura es divideix en tres nodes principals connectats via **VPN Wireguard**:
-
-### 🏗️ Node 1: Proxmox VE (Seu Local)
-És el nucli de serveis de la infraestructura. Gestiona la identitat i l'emmagatzematge.
-* **Samba  (Ubuntu server):** Gestió centralitzada d'usuaris i polítiques.
-* **Samba File Server:** Recursos compartits en xarxa.
-* **Samba Client:** Estació de treball per a proves de consum de recursos.
-* **Apache Web Server:** Servidor web intern per a aplicacions corporatives.
-* **Nota sobre emmagatzematge:** S'ha optat per una configuració estàndard (sense LUKS) per prioritzar l'estabilitat dels serveis desplegats post-instal·lació.
-
-### ☁️ Node 2: VPS Extern (Gateway de Seguretat)
-Actua com a perímetre de defensa i punt d'accés global.
-* **Nginx Proxy Manager (NPM):** Gestió de dominis professionals i certificats SSL.
-* **CrowdSec:** IPS (Intrusion Prevention System) que bloqueja IPs malicioses automàticament.
-* **Wireguard Server:** Orquestrador de tots els túnels VPN del projecte.
-
-### 🧪 Node 3: VM Isard (Monitoratge & SOC)
-Entorn virtualitzat dedicat exclusivament a la seguretat i salut del sistema.
-* **Wazuh Manager:** SIEM/XDR per a l'anàlisi de logs i detecció d'intrusions en temps real.
-* **Zabbix Server:** Monitoratge de rendiment (CPU, RAM, Red) de tots els contenidors i nodes.
+## 🛰️ Topologia de Xarxa
+L'arquitectura es basa en tres pilars connectats mitjançant túnels **Wireguard**:
+1. **Node 1 (Local):** Serveis Crítics (Proxmox).
+2. **Node 2 (Cloud):** Perímetre i Proxy (VPS).
+3. **Node 3 (SOC):** Monitoratge i Pentesting (Isard/Kali).
 
 ---
 
-## 📊 La Quiniela: Estat del Projecte
+## 🛠️ Guia de Repliació (Instal·lació pas a pas)
 
-| Objectiu | Estat | Implementació |
-| :--- | :---: | :--- |
-| **Accés Extern Global** | ✅ | Domini .com/.es + Proxy Invers |
-| **Identitat Centralitzada** | ✅ | Active Directory + GPO |
-| **Monitoratge SIEM** | ✅ | Stack Wazuh complet |
-| **Control de Rendiment** | ✅ | Dashboards de Zabbix |
-| **Cifratge LUKS** | ⚠️ | Descartat (Prioritat estabilitat Proxmox) |
+### Pas 1: Infraestructura Base (Node 1 - Proxmox)
+Instal·lació dels serveis de producció en contenidors LXC o VMs:
+
+1. **Samba AD & File Server:**
+   - Desplegar Ubuntu Server.
+   - Instal·lar Samba: `sudo apt install samba krb5-config winbind`.
+   - Provisionar el domini: `samba-tool domain provision --use-rfc2307 --interactive`.
+2. **Web Server:**
+   - Desplegar contenidor LXC (Debian/Ubuntu).
+   - Instal·lar Apache: `sudo apt install apache2`.
+
+### Pas 2: Perímetre de Defensa (Node 2 - VPS)
+Configuració del gateway extern i seguretat de xarxa:
+
+1. **VPN Wireguard (L'enllaç):**
+   - Instal·lar Wireguard: `sudo apt install wireguard`.
+   - Generar claus i configurar `/etc/wireguard/wg0.conf` per connectar Node 1 i Node 3.
+2. **Nginx Proxy Manager (NPM):**
+   - Instal·lar via Docker Compose per gestionar el domini `.com/.es` i SSL (Let's Encrypt).
+3. **CrowdSec (IPS):**
+   - Instal·lar l'agent: `curl -s https://packagecloud.io/install/repositories/crowdsec/crowdsec/script.deb.sh | sudo bash`.
+   - Instal·lar la bouncer per a Nginx: `sudo apt install crowdsec-firewall-bouncer-iptables`.
+
+### Pas 3: Monitoratge i SOC (Node 3 - Isard/Kali)
+Implementació de la vigilància activa:
+
+1. **Wazuh (SIEM/XDR):**
+   - Instal·lació ràpida (All-in-one):
+     ```bash
+     curl -sO [https://packages.wazuh.com/4.x/wazuh-install.sh](https://packages.wazuh.com/4.x/wazuh-install.sh) && sudo bash wazuh-install.sh -a
+     ```
+2. **Zabbix (Rendiment):**
+   - Instal·lar Zabbix Server i connectar els agents dels altres nodes per monitorar CPU/RAM.
+3. **Auditoria de Vulnerabilitats (OpenVAS en Kali):**
+   - Instal·lar motor GVM: `sudo apt install gvmd gsad openvas-scanner`.
+   - Inicialitzar: `sudo gvm-setup`.
+   - *Nota de manteniment:* Si la DB de GVM es desactualitza, executar: `sudo -u _gvm gvmd --migrate`.
 
 ---
 
-## 🛠️ Stack Tecnològic
+## 📊 Estat de la Implementació
 
-| Categoria | Tecnologies |
-| :--- | :--- |
-| **Virtualització** | Proxmox VE, Isard VDI, Containers LXC |
-| **Seguretat** | Wazuh, CrowdSec, Wireguard (VPN) |
-| **Xarxes** | Nginx Proxy Manager, DNS Professionals |
-| **Sistemes** | Windows Server (AD), Linux (Samba, Apache) |
-| **Monitoratge** | Zabbix, Grafana (opcional) |
-
----
-
-## 🚀 Desafiaments Superats
-
-1.  **Bloquejos de Xarxa:** Migració de DuckDNS a dominis professionals per evitar el filtratge de xarxes corporatives.
-2.  **Configuració VPN:** Resolució de conflictes d'IPs mitjançant la generació de claus úniques per a cada *peer*.
-3.  **Estabilitat de Proxmox:** Decisió conscient de no implementar LUKS post-instal·lació per no comprometre la continuïtat de l'Active Directory i el servidor Samba.
+| Objectiu | Tecnologia | Estat |
+| :--- | :--- | :---: |
+| **VPN Inter-Node** | Wireguard | ✅ |
+| **Proxy Invers** | Nginx Proxy Manager | ✅ |
+| **Identitat** | Samba Active Directory | ✅ |
+| **IDS/IPS** | Wazuh + CrowdSec | ✅ |
+| **Auditoria** | OpenVAS (GVM) | ✅ |
 
 ---
 
-## 🔒 Seguretat i Auditories
-L'infraestructura està preparada per a auditories de seguretat, amb contractes de **Pentesting** redactats i un entorn de proves (Isard) aïllat per a simulacions d'atac i defensa.
+## 🚀 Desafiaments i Hardening
+
+* **Migració DNS:** Abandonament de DuckDNS per dominis professionals per evitar el bloqueig de ports i millorar el SEO/Reputació d'IP.
+* **Seguretat VPN:** S'utilitzen claus privades úniques per node (`Peer-to-Peer`) per evitar moviments laterals no autoritzats.
+* **Hardening Proxmox:** Decisió de no utilitzar LUKS post-instal·lació per evitar corrupció de dades en l'Active Directory, movent el xifratge a nivell d'aplicació i túnels VPN.
+
+---
+
+## 🔒 Pentesting i Compliance
+L'infraestructura se sotmet a escanejos setmanals amb **OpenVAS** i revisions de logs amb **Wazuh** per complir amb els estàndards de seguretat vigents.
 
 ---
 *LexDefensor 2026 - Desenvolupat per a la seguretat i integritat de sistemes híbrids.*
