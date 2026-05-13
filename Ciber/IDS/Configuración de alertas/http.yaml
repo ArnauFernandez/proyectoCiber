@@ -1,0 +1,26 @@
+type: http
+name: http-discord_notifier
+log_level: info
+
+# URL del teu Webhook de Discord
+url: 
+
+method: POST
+
+# Headers obligatoris per a Discord
+headers:
+  Content-Type: application/json
+
+# Format amb neteja de salts de línia per evitar l'error 400
+format: |
+  {{range . -}}
+  {{range .Decisions -}}
+  {"content": "🛡️ **Alerta de Defensa**\n**IP:** `{{.Value}}` bloquejada.\n**Motiu:** `{{.Scenario}}`."}
+  {{end -}}
+  {{end -}}
+
+# Configuració de seguretat per evitar col·lapsar el canal
+group_wait: 5s
+group_threshold: 1
+max_retry: 3
+timeout: 5s

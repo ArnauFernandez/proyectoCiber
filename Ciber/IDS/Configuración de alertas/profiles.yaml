@@ -1,0 +1,10 @@
+name: default_ip_remediation
+# Treiem els filtres temporalment per assegurar que TOT s'enviï
+filters:
+ - 1 == 1
+decisions:
+ - type: ban
+   duration: 4h
+notifications:
+ - http-discord_notifier
+on_success: break
