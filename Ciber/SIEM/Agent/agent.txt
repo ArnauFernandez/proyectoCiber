@@ -1,0 +1,44 @@
+PART 1: Configuració a la màquina client (Linux - Ubuntu/Debian)
+Connecta't per terminal SSH a l'equip que vols protegir i monitorar:
+
+1. Afegir el repositori oficial de Wazuh
+Primer hem d'instal·lar la clau GPG i el repositori de Wazuh per poder baixar l'agent oficial:
+
+Bash
+sudo -s
+apt-get install gnupg apt-transport-https arrows-
+curl -s https://packages.wazuh.com/key/Wazuh-GPG-Key | gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/wazuh.gpg --import
+chmod 644 /usr/share/keyrings/wazuh.gpg
+echo "deb [signed-by=/usr/share/keyrings/wazuh.gpg] https://packages.wazuh.com/4.x/apt/ stable main" | tee -a /etc/apt/sources.list.dev/wazuh.list
+apt-get update
+2. Instal·lar l'Agent vinculant-lo al Manager
+En lloc de fer un apt install normal i després editar fitxers, executarem la comanda injectant la variable WAZUH_MANAGER. Això configurarà l'agent de manera automàtica:
+
+Bash
+sudo WAZUH_MANAGER="IP_DEL_TEU_WAZUH_MANAGER" apt-get install wazuh-agent
+💡 Substitueix IP_DEL_TEU_WAZUH_MANAGER per la IP privada o pública on escolta el teu servidor central de Wazuh.
+
+3. Activar i arrencar el servei
+Un cop instal·lat, l'agent ja haurà registrat la IP del servidor al seu fitxer de configuració intern (/var/ossec/etc/ossec.conf). Només ens queda arrencar el servei:
+
+Bash
+systemctl daemon-reload
+systemctl enable wazuh-agent
+systemctl start wazuh-agent
+PART 2: I si el client és un equip Windows?
+Wazuh ho fa molt fàcil per a entorns Windows gràcies a PowerShell. Si l'equip a monitorar és un servidor o client Windows, només has d'obrir PowerShell com a Administrador i llançar aquesta comanda de línia:
+
+PowerShell
+Invoke-WebRequest -Uri https://packages.wazuh.com/4.x/windows/wazuh-agent-4.9.0-1.msi -OutFile ${env:tmp}\wazuh-agent.msi; Start-Process -FilePath msiexec.exe -ArgumentList "/i `${env:tmp}\wazuh-agent.msi /q WAZUH_MANAGER='IP_DEL_TEU_WAZUH_MANAGER'" -NoNewWindow -Wait; Start-Service -Name "Wazuh"
+PART 3: Verificació al Wazuh Dashboard (GUI)
+A diferència de Zabbix, no cal que afegeixis el Host manualment a la web. L'agent de Wazuh s'auto-registra tot sol gràcies a la comanda que hem executat.
+
+Obre el teu navegador i entra al panell web de Wazuh.
+
+Clica a la icona del menú desplegable de dalt a l'esquerra (☰) i ves a Wazuh ➡️ Agents.
+
+Veuràs que el nou equip ja apareix a la llista de manera automàtica.
+
+Revisa la columna Status:
+
+Al cap de pocs segons passarà d'Pending a Active (en color verd).

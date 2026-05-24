@@ -1,0 +1,180 @@
+1. INTRODUCCIÓ AL SISTEMA DE MONITORATGE (NMS)
+Amb l'objectiu de garantir la visibilitat completa i l'alta disponibilitat de la infraestructura corporativa, s'implementa un Sistema de Monitoratge de Xarxa (Network Management System o NMS). Aquesta eina permet auditar i monitorar en tot moment l'estat de salut de tots els equips connectats a la xarxa, controlant paràmetres crítics com ara el percentatge d'ús de la CPU, la memòria RAM, l'emmagatzematge del disc o la latència dels enllaços.
+
+Així mateix, el sistema actua com un mecanisme de control de nivell de servei (SLA). En cas que un equip pateixi una caiguda o pèrdua de connectivitat, el sistema registra l'incident immediatament i, una vegada resolta la incidència, calcula automàticament el temps exacte de recuperació. D'aquesta manera, l'equip tècnic pot analitzar l'impacte real sobre la continuïtat del negoci.
+
+Per què Zabbix?
+S'ha escollit Zabbix com a motor nuclear del monitoratge per tres motius clau:
+
+Eficiència i escalabilitat: El seu disseny Open Source permet centralitzar milers de mètriques sense llicències privatives.
+
+Instal·lació estructurada: Ofereix un desplegament modular robust acoblat a bases de dades relacionals (MySQL/MariaDB).
+
+Interfície Gràfica (GUI) intuïtiva: Disposa d'un panell de control complet molt visual, facilitant que els administradors es familiaritzin ràpidament amb l'entorn i puguin analitzar gràfiques de rendiment en temps real.
+
+2. GUIA D'INSTAL·LACIÓ DE ZABBIX SERVER (PLATAFORMA CORE)
+Pas 1: Elecció de Plataforma
+Abans de començar amb la línia de comandes, s'accedeix a la bústia oficial de descàrregues de Zabbix a l'URL de la plataforma. Allà se selecciona la configuració requerida pel nostre entorn:
+
+Zabbix Version: 8.0 (LTS)
+
+OS Distribution: Ubuntu (Versió 24.04 LTS)
+
+Zabbix Component: Server, Frontend, Agent
+
+Database: MySQL
+
+Web Server: Apache
+
+Pas 2: Instal·lació de Zabbix per a la nostra Plataforma
+Es procedeix a obrir una terminal SSH al servidor destinat a allotjar el gestor (Manager) de Zabbix.
+
+1. Escalada de privilegis d'administrador:
+
+Bash
+sudo -s
+2. Descàrrega i registre del repositori oficial de Zabbix 8.0:
+
+Bash
+wget https://repo.zabbix.com/zabbix/8.0/release/ubuntu/pool/main/z/zabbix-release/zabbix-release_latest_8.0+ubuntu24.04_all.deb
+dpkg -i zabbix-release_latest_8.0+ubuntu24.04_all.deb
+apt update
+3. Instal·lació dels paquets del Servidor, de la Interfície Web (PHP/Apache) i de l'Agent local:
+
+Bash
+apt install zabbix-server-mysql zabbix-frontend-php zabbix-apache-conf zabbix-sql-scripts zabbix-agent
+4. Configuració i creació de la base de dades (BBDD):
+S'accedeix al motor de base de dades local per crear l'estructura buida on Zabbix emmagatzemarà l'històric de mètriques:
+
+Bash
+mysql -uroot -p
+(S'introdueix la contrasenya del root de la base de dades i s'executen les ordres següents al prompt de MySQL):
+
+SQL
+CREATE DATABASE zabbix CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
+CREATE USER zabbix@localhost IDENTIFIED BY 'password';
+GRANT ALL PRIVILEGES ON zabbix.* TO zabbix@localhost;
+SET GLOBAL log_bin_trust_function_creators = 1;
+QUIT;
+5. Importació de l'esquema de dades inicial:
+S'injecten les taules nates del repositori cap a la base de dades de Zabbix que s'acaba de crear. El sistema demanarà la contrasenya definida anteriorment (password):
+
+Bash
+zcat /usr/share/zabbix/sql-scripts/mysql/server.sql.gz | mysql --default-character-set=utf8mb4 -uzabbix -p zabbix
+6. Restabliment de paràmetres de seguretat a la base de dades:
+Una vegada importades les funcions de l'esquema, es deshabilita la funció per motius de seguretat corporativa:
+
+Bash
+mysql -uroot -p
+SQL
+SET GLOBAL log_bin_trust_function_creators = 0;
+QUIT;
+7. Vinculació del Servidor Zabbix amb la Base de Dades:
+S'edita el fitxer de configuració de Zabbix per establir la credencial de connexió:
+
+Bash
+nano /etc/zabbix/zabbix_server.conf
+Es cerca el paràmetre DBPassword dins de l'arxiu, es desmarca (eliminant el símbol #) i es modifica per indicar la contrasenya del pas anterior:
+
+Plaintext
+DBPassword=password
+(Es desa el fitxer utilitzant Ctrl+O, Enter, i se surt amb Ctrl+X).
+
+8. Posada en marxa i arrencada dels processos:
+Es reinicien i es configuren els serveis de Zabbix, l'Agent i el servidor web Apache per tal que s'executin de manera automàtica amb cada reinici del sistema operatiu:
+
+Bash
+systemctl restart zabbix-server zabbix-agent apache2
+systemctl enable zabbix-server zabbix-agent apache2
+Pas 3: Accés a la Interfície Gràfica (GUI)
+Un cop aixecats els serveis, la configuració inicial finalitza des de qualsevol navegador web de la xarxa interna accedint a la URL següent:
+
+Plaintext
+http://ip_del_servidor/zabbix
+(On s'indicarà la IP o el domini assignat al Zabbix Manager per acabar l'assistent web de benvinguda).
+
+3. INTEGRACIÓ DE NOTIFICACIONS D'ALERTES A DISCORD (WEBHOOK NAI)
+Per evitar haver de vigilar la interfície gràfica de Zabbix contínuament, es desplega un sistema de notificacions automatitzat per rebre incidències en un canal dedicat de Discord en temps real, aprofitant el motor natiu de JavaScript incorporat a Zabbix.
+
+Pas 1: Crear el Webhook a Discord
+Entra al teu servidor de Discord i clica la icona de la roda dentada (⚙️ Ajustos) al costat del canal de text on vols agrupar les alertes.
+
+Al menú lateral de l'esquerra, entra a la secció Integraciones i clica a Webhooks.
+
+Selecciona el botó Crear Webhook.
+
+Modifica la informació bàsica:
+
+Nombre: Zabbix Monitoring Bot
+
+Canal: Comprova que s'assigna correctament al canal triat.
+
+Fes clic a Copiar URL del Webhook. Guarda aquest enllaç en un lloc segur (el farem servir immediatament al Pas 3).
+
+Desa els canvis a Discord.
+
+Pas 2: Activar el recurs (Media Type) a Zabbix
+Accedeix a la interfície de Zabbix (http://ip/zabbix).
+
+Al menú lateral esquerre, navega fins a Administration (Administració) i entra a Media types (Tipus de mitjans).
+
+Cerca el mitjà anomenat Discord a la llista de connectors directes.
+
+Revisa la columna Status (Estat): si es troba en color vermell (Disabled), fes-li clic a sobre per canviar-lo a color verd (Enabled).
+
+Pas 3: Vincular el Webhook a l'Usuari Destinatari
+Dins de la interfície de Zabbix, dirigeix-te a Administration ➡️ Users (Usuaris).
+
+Fes clic sobre l'alias de l'usuari encarregat d'administrar el SOC (per exemple, l'usuari Admin).
+
+A la part superior de la seva fitxa de perfil, prem sobre la pestanya Media.
+
+Clica l'enllaç de color blau Add per obrir la finestra emergent de configuració de canals:
+
+Type: Selecciona Discord al desplegable.
+
+Send to: Enganxa exactament l'URL del Webhook de Discord copiat al Pas 1.
+
+Use if severity: Selecciona quines gravetats d'incident vols rebre al canal corporatiu. (Es recomana marcar Warning, Average, High i Disaster, i ometre les informatives per reduir el volum de missatges innecessaris).
+
+Fes clic al botó Add de la finestra emergent.
+
+Molt important: Fes clic al botó Update a baix de tot del panell central per fixar els canvis del perfil de l'usuari de forma global.
+
+Pas 4: Crear la Regla de Reacció i Enviament (Trigger Action)
+El darrer pas serveix per indicar-li a Zabbix en quin moment ha de disparar l'ordre d'enviament.
+
+Al menú lateral, navega fins a Configuration (Configuració) ➡️ Actions (Accions) ➡️ Trigger actions.
+
+Fes clic al botó de color blau Create action a la cantonada superior dreta.
+
+A la pestanya Action:
+
+Name: Assigna un nom que aclareixi la funció (Exemple: Send Alerts to Discord Server).
+
+Canvia a la pestanya Operations per programar la notificació de caiguda:
+
+Al bloc principal Operations, prem sobre Add.
+
+A l'apartat Send to users, clica a Add i afegeix l'usuari configurat anteriorment (Admin).
+
+A l'apartat Send only to, selecciona unívocament Discord.
+
+Clica el botó petit Add de sota del bloc operatiu.
+
+Canvia a la pestanya Recovery operations per programar l'avís quan l'incident hagi estat solucionat:
+
+Repeteix exactament el mateix procediment de configuració (Add > Usuari Admin > Send only to: Discord). Això garantirà que el bot publiqui una targeta en color verd un cop la incidència de l'equip estigui resolta, informant del temps transcorregut fins a la recuperació del servei.
+
+Clica el botó Add general a la part inferior per validar l'acció automatitzada.
+
+4. PROVA DE CONCEPTE I VERIFICACIÓ
+Per garantir la resiliència del protocol i la connectivitat del canal, es pot realitzar una simulació de fallada de xarxa forçant l'aturada d'un dels serveis d'una màquina monitoritzada des de la consola Linux:
+
+Bash
+# Aturada d'un dels serveis d'un servidor web vigilat per l'Agent de Zabbix
+sudo systemctl stop apache2
+En el següent cicle d'escaneig de l'NMS, el disparador (Trigger) canviarà el seu estat a PROBLEM, obrint un cas d'incident crític. Immediatament, es publicarà una targeta de registre visual al canal de Discord enllaçat amb tota la informació estructurada de l'equip (Nom del node, ID del problema, gravetat de l'impacte i hora de l'esdeveniment). Una vegada es torni a iniciar el servei afectat (sudo systemctl start apache2), es rebrà un nou avís de color verd enllaçat de tipus [RESOLVED] tancant el cicle de vida de l'incident.
+
+
+

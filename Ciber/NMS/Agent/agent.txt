@@ -1,0 +1,73 @@
+PART 1: Configuració a la màquina client (l'equip a monitorar)
+Imaginem que vols monitorar un servidor Linux (Ubuntu/Debian). Connecta't a aquest equip per terminal i segueix aquests passos:
+
+1. Instal·lar l'Agent de Zabbix
+Primer, afegeix el repositori oficial de Zabbix a la màquina client (assegura't que la versió de l'agent coincideixi amb la del teu servidor, en aquest cas la 8.0) i instal·la el paquet:
+
+Bash
+sudo -s
+wget https://repo.zabbix.com/zabbix/8.0/release/ubuntu/pool/main/z/zabbix-release/zabbix-release_latest_8.0+ubuntu24.04_all.deb
+dpkg -i zabbix-release_latest_8.0+ubuntu24.04_all.deb
+apt update
+apt install zabbix-agent
+2. Configurar el fitxer de l'Agent
+Obre el fitxer de configuració de l'agent per indicar-li on es troba el servidor Zabbix central:
+
+Bash
+nano /etc/zabbix/zabbix_agentd.conf
+Cerca i modifica els següents tres paràmetres clau:
+
+Server: Posa la IP del teu Zabbix Server (el Manager).
+
+Plaintext
+Server=IP_DEL_TEU_ZABBIX_SERVER
+ServerActive: Torna a posar la IP del teu Zabbix Server (serveix per a l'enviament actiu de mètriques).
+
+Plaintext
+ServerActive=IP_DEL_TEU_ZABBIX_SERVER
+Hostname: Posa un nom únic per a aquest equip. Important: apunta aquest nom exactament com el posis aquí, ja que a la interfície web l'hauràs d'escriure igual (majúscules i minúscules incloses).
+
+Plaintext
+Hostname=Servidor-Web-Prod
+Desa el fitxer (Ctrl+O, Enter) i surt (Ctrl+X).
+
+3. Reiniciar i activar el servei
+Aplica els canvis i assegura't que l'agent s'arrenqui automàticament si la màquina es reinicia:
+
+Bash
+systemctl restart zabbix-agent
+systemctl enable zabbix-agent
+PART 2: Configuració a la Interfície Web de Zabbix (GUI)
+Ara deves anar al teu navegador i entrar al panell web de Zabbix (http://ip_del_server/zabbix).
+
+1. Crear el nou Host
+Al menú lateral esquerre, navega fins a Data collection (a les versions anteriors es deia Configuration) ➡️ Hosts.
+
+Clica el botó blau Create host situat a la cantonada superior dreta.
+
+2. Emplenar la fitxa de l'equip
+A la pestanya principal Host, configura els següents camps:
+
+Host name: Escriu exactament el mateix nom que vas posar al paràmetre Hostname del fitxer de text de la màquina client (en el nostre exemple: Servidor-Web-Prod).
+
+Templates (Plantilles): Fes clic i cerca la plantilla preconfigurada oficial per al sistema operatiu. Per a un Linux estàndard, tria: Linux by Zabbix agent. (Això carregarà automàticament totes les gràfiques de CPU, RAM, disc, etc.)
+
+Host groups (Grups de hosts): Tria un grup existent (com Linux servers) o escriu-ne un de nou per organitzar el teu inventari.
+
+Interfaces: Clica el botó Add ➡️ selecciona Agent.
+
+IP address: Introdueix la IP real de la màquina client (la que té l'agent instal·lat).
+
+Port: Deixa el port per defecte 10050 (és el port estàndard de l'agent).
+
+3. Desar
+Clica el botó blau Add de sota de tot per desar el registre.
+
+3. VERIFICACIÓ DE LA CONNEXIÓ
+Un cop desat, tornaràs a la llista de Hosts. Cerca l'equip que acabes d'afegir.
+
+A la columna anomenada Availability (Disponibilitat), veuràs la icona de ZBX:
+
+Transcorreguts un o dos minuts, aquesta icona s'ha de posar de color verd. Això indica que el servidor i l'agent s'han entès correctament i la comunicació està xifrada o oberta.
+
+Si es posa en vermell, hi ha un problema de comunicació (revisa que el tallafocs del client tingui el port 10050 obert o que hagis escrit el Hostname exactament igual a ambdós llocs).
