@@ -1,0 +1,198 @@
+:root {
+    --primary: #ffffff;    /* Azul muy oscuro para textos importantes */
+    --accent: #d4af37;     /* Oro para detalles */
+    --white: #ffffff;
+    --bg-light: #0066c5;   /* El color claro y uniforme para toda la web */
+    --text-main: #ffffff;
+}
+
+* { 
+    margin: 0; 
+    padding: 0; 
+    box-sizing: border-box; 
+}
+
+body {
+    font-family: 'Source Code Pro', monospace;
+    color: var(--text-main);
+    background-color: var(--bg-light); /* Fondo uniforme */
+    line-height: 1.6;
+}
+
+/* --- NAVEGACIÓN --- */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 8%;
+    background: var(--bg-light); /* Fondo igual al resto de la página */
+}
+
+.logo { 
+    color: var(--primary); 
+    font-family: 'Source Code Pro', monospace; 
+    font-size: 1.6rem; 
+    font-weight: 800;
+    cursor: pointer;
+    transition: opacity 0.3s ease;
+}
+.logo span { color: var(--accent); }
+
+.logo:hover {
+    opacity: 0.8;
+}
+
+.nav-links { display: flex; list-style: none; align-items: center; }
+.nav-links li a {
+    color: var(--primary);
+    text-decoration: none;
+    margin-left: 2rem;
+    font-size: 1.1rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.nav-links li a:hover {
+    color: var(--accent); /* Cambia a dorado */
+}
+
+/* --- HERO SECTION (Solo para index.html) --- */
+/* Aquí estaba el fallo principal. Aseguramos que el texto sea blanco sobre la imagen */
+.hero {
+    height: 80vh;
+    background: url('https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&q=80&w=1920') center/cover;
+}
+
+.hero-overlay {
+    background: rgba(10, 17, 26, 0.7); /* Capa oscura para que el texto blanco se lea */
+    height: 100%;
+    display: flex;
+    align-items: center;
+    padding: 0 8%;
+}
+
+.hero-content { max-width: 800px; color: var(--white); }
+.hero h1 { font-family: 'Source Code Pro', monospace; font-size: 3.5rem; margin: 1rem 0; color: var(--white); }
+.subtitle { color: var(--accent); text-transform: uppercase; font-size: 1.5rem; letter-spacing: 4px; }
+
+.btn-primary {
+    background: var(--accent);
+    color: var(--primary);
+    padding: 1rem 2rem;
+    text-decoration: none;
+    font-weight: bold;
+    display: inline-block;
+    margin-top: 1rem;
+}
+
+.btn-secondary {
+    border: 1px solid var(--white);
+    color: var(--white);
+    padding: 1rem 2rem;
+    text-decoration: none;
+    margin-left: 1rem;
+    display: inline-block;
+}
+
+/* --- CABECERAS DE PÁGINAS (Servicios, Contacto) --- */
+.page-header {
+    background: var(--bg-light);
+    color: var(--primary);
+    /* Reducimos drásticamente el padding superior e inferior */
+    padding: 1.5rem 8% 0.5rem 8%; 
+    text-align: center;
+}
+
+.page-header h1 { 
+    font-family: 'Source Code Pro', monospace; 
+    font-size: 3.5rem; 
+    line-height: 1.2; /* Forzamos a que las líneas estén muy juntas */
+    margin: 0;
+    font-weight: 800;
+}
+
+.page-header p {
+    font-size: 1.5rem;
+    line-height: 1.1; /* Hacemos el párrafo más compacto */
+    margin-top: 0.2rem; /* Espacio mínimo con el título */
+    opacity: 0.8;
+}
+
+/* --- SECCIÓN DE SERVICIOS (Cuadrícula de 4) --- */
+.services-detail {
+    padding: 4rem 8%;
+    max-width: 1200px;
+    margin: auto;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* 2 columnas */
+    gap: 2rem;
+}
+
+.service-item {
+    background: var(--white);
+    padding: 2.5rem;
+    border-top: 4px solid var(--accent); /* Línea dorada arriba, más moderno */
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+}
+
+.service-item h3 { 
+    font-family: 'Source Code Pro', monospace; 
+    margin-bottom: 1rem; 
+    color: var(--accent);
+}
+
+.service-item p { color: #000000; }
+
+/* EFECTO HOVER */
+.service-item:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+    background: var(--white); /* Se mantiene blanco pero resalta */
+}
+
+/* --- SECCIÓN CONTACTO --- */
+.contact-section {
+    padding: 4rem 8%;
+    max-width: 1100px;
+    margin: auto;
+}
+
+.contact-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    background: white;
+    padding: 3rem;
+    border-top: 4px solid var(--accent);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+    border-radius: 20px
+}
+
+.contact-form input, .contact-form select, .contact-form textarea {
+    padding: 1rem;
+    border: 1px solid #ddd;
+    font-family: inherit;
+}
+
+/* --- FOOTER --- */
+.footer-bottom {
+    background: var(--bg-light);
+    color: #888;
+    text-align: center;
+    padding: 3rem;
+    font-size: 0.8rem;
+    border-top: 1px solid #ddd;
+}
+
+/* --- RESPONSIVE (Móviles) --- */
+@media (max-width: 850px) {
+    .services-detail { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 2.2rem; }
+    .nav-links { display: none; }
+}
