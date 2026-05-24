@@ -1,0 +1,23 @@
+DROP TRIGGER IF EXISTS notificar_nuevo_usuario;
+
+DELIMITER //
+
+CREATE TRIGGER notificar_nuevo_usuario
+AFTER INSERT ON usuarios
+FOR EACH ROW
+BEGIN
+    DECLARE comando VARCHAR(1000);
+    DECLARE respuesta INT;
+    
+    -- Concatenamos el comando curl protegiendo la URL del webhook
+    SET comando = CONCAT(
+        'curl -H "Content-Type: application/json" -X POST -d ',
+        '\'{"content": "🚀 **¡Nuevo usuario registrado!**\\n**Nombre:** ', NEW.nombre, '\\n**Email:** ', NEW.email, '"}\' ',
+        '"YOUR_DISCORD_WEBHOOK_URL"'
+    );
+    
+    -- Ejecutamos el comando en el sistema operativo usando la UDF compilada
+    SET respuesta = sys_exec(comando);
+END //
+
+DELIMITER ;
